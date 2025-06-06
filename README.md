@@ -18,9 +18,6 @@ The package handles the complexities of downloading, extracting, and parsing the
 
 Requires Python 3.12 or higher.
 
-```bash
-pip install germanlegaltexts
-```
 
 ## Usage
 
