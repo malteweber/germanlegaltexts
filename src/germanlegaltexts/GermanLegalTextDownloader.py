@@ -1,13 +1,13 @@
-import tempfile
-import requests
-import zipfile
 import io
-import re
+import tempfile
+import xml.etree.ElementTree as ET
+import zipfile
 from pathlib import Path
+import requests
 from .model.Gesetzbuch import Gesetzbuch
 
-class GermanLegalTextDownloader:
 
+class GermanLegalTextDownloader:
     base_url = 'https://www.gesetze-im-internet.de'
 
     def download_law_xml(self, abbreviation: str) -> str:
@@ -69,49 +69,39 @@ class GermanLegalTextDownloader:
 
     def get_all_xml_paths(self) -> list:
         """
-        Collects all XML paths from https://www.gesetze-im-internet.de/aktuell.html
-        For all laws linked in each Teilliste, from A to Z and 1 to 9.
+        Collects all XML paths from https://www.gesetze-im-internet.de/gii-toc.xml
+        This XML file contains items with titles and links to XML zip files.
 
         Returns:
             A list of XML paths for all laws
 
         Raises:
-            ValueError: If the index page cannot be downloaded
+            ValueError: If the TOC XML file cannot be downloaded or parsed
         """
-        index_url = f"{self.base_url}/aktuell.html"
+        toc_url = f"{self.base_url}/gii-toc.xml"
 
-        response = requests.get(index_url)
-        if response.status_code != 200:
-            raise ValueError(f"Failed to download the index page: {index_url} - HTTP {response.status_code}")
+        try:
+            response = requests.get(toc_url)
+            if response.status_code != 200:
+                raise ValueError(f"Failed to download the TOC XML file: {toc_url} - HTTP {response.status_code}")
 
-        index_content = response.text
+            xml_content = response.text
+            root = ET.fromstring(xml_content)
 
-        teilliste_pattern = r'href="(\./Teilliste_[A-Z0-9]\.html)"'
-        teilliste_links = re.findall(teilliste_pattern, index_content)
+            all_xml_paths = []
 
-        all_xml_paths = []
+            for item in root.findall('.//item'):
+                link_element = item.find('link')
+                if link_element is not None and link_element.text:
+                    # Clean up the link text by removing whitespace
+                    link = link_element.text.strip()
+                    all_xml_paths.append(link)
 
-        for teilliste_link in teilliste_links:
-            clean_link = teilliste_link.replace("./", "")
-            teilliste_url = f"{self.base_url}/{clean_link}"
-
-            try:
-                teilliste_response = requests.get(teilliste_url)
-                if teilliste_response.status_code != 200:
-                    continue
-
-                teilliste_content = teilliste_response.text
-
-                law_pattern = r'href="\./([^\/]+)/index\.html"'
-                law_abbreviations = re.findall(law_pattern, teilliste_content)
-
-                for abbreviation in law_abbreviations:
-                    xml_path = f"{self.base_url}/{abbreviation}/xml.zip"
-                    all_xml_paths.append(xml_path)
-            except Exception:
-                continue
-
-        return all_xml_paths
+            return all_xml_paths
+        except ET.ParseError as e:
+            raise ValueError(f"Failed to parse the TOC XML file: {str(e)}")
+        except Exception as e:
+            raise ValueError(f"An error occurred while processing the TOC XML file: {str(e)}")
 
     def download_all_law_books(self) -> list:
         """
