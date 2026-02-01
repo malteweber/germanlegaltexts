@@ -7,7 +7,7 @@ import requests
 from .model.Gesetzbuch import Gesetzbuch
 
 
-class GermanLegalTextDownloader:
+class GermanLawDownloader:
     base_url = 'https://www.gesetze-im-internet.de'
 
     def download_law_xml(self, abbreviation: str) -> str:
@@ -93,7 +93,6 @@ class GermanLegalTextDownloader:
             for item in root.findall('.//item'):
                 link_element = item.find('link')
                 if link_element is not None and link_element.text:
-                    # Clean up the link text by removing whitespace
                     link = link_element.text.strip()
                     all_xml_paths.append(link)
 

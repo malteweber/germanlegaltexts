@@ -1,18 +1,23 @@
 # GermanLegalTexts
 
-A Python package for downloading, parsing, and working with German legal texts from the official [Gesetze im Internet](https://www.gesetze-im-internet.de/) website.
+A Python package for downloading, parsing, and working with German legal texts and court judgements from official German government sources.
 
 ## Description
 
-GermanLegalTexts provides tools to programmatically access and work with German legal texts. It allows you to:
+GermanLegalTexts provides tools to programmatically access and work with German legal texts and court judgements. It allows you to:
 
-- Download individual German law books by their abbreviation (e.g., "bgb" for Bürgerliches Gesetzbuch)
-- Download all available German legal texts
-- Parse the XML content into structured Python objects
-- Access specific paragraphs, sections, and other elements of legal texts
-- Work with the content in a structured, object-oriented way
+- **Law Books (Gesetzbücher)**: Download and parse legal codes from [Gesetze im Internet](https://www.gesetze-im-internet.de/)
+  - Download individual law books by abbreviation (e.g., "bgb" for Bürgerliches Gesetzbuch)
+  - Download all available German legal texts
+  - Access specific paragraphs, sections, and other elements
+  
+- **Court Judgements (Rechtsprechung)**: Download and parse court decisions from [Rechtsprechung im Internet](https://www.rechtsprechung-im-internet.de/)
+  - Download individual judgements
+  - Browse and filter judgement index
+  - Download first n judgements or all available judgements
+  - Access structured judgement data (facts, reasoning, decision)
 
-The package handles the complexities of downloading, extracting, and parsing the XML files provided by the official German legal text repository.
+The package handles the complexities of downloading, extracting, and parsing the XML files provided by the official German legal repositories.
 
 ## Installation
 
@@ -21,7 +26,9 @@ Requires Python 3.12 or higher.
 
 ## Usage
 
-### Downloading a Single Law Book
+### Law Books (Gesetzbücher)
+
+#### Downloading a Single Law Book
 
 ```python
 from germanlegaltexts.GermanLegalTextDownloader import GermanLegalTextDownloader
@@ -71,6 +78,89 @@ print(f"Total available law books: {len(all_xml_paths)}")
 # Download all law books (this may take a long time)
 all_law_books = downloader.download_all_law_books()
 print(f"Successfully downloaded {len(all_law_books)} law books")
+```
+
+### Court Judgements (Rechtsprechung)
+
+#### Downloading a Single Judgement
+
+```python
+from germanlegaltexts.GermanJudgementDownloader import GermanJudgementDownloader
+
+# Create a downloader instance
+downloader = GermanJudgementDownloader()
+
+# Download a spechierarchical data models to represent German legal documents:
+
+### Law Books (Gesetzbuch)
+
+- `Gesetzbuch`: The top-level container for a law book
+- `Norm`: Represents a legal norm/section
+- `Metadaten`: Contains metadata about a norm
+- `Textdaten`: Contains the actual text content
+- Supporting classes for specific elements (Fundstelle, Standangabe, etc.)
+
+### Court Judgements (Rechtsprechung)
+
+- `Rechtsprechung`: The top-level container for a court judgement
+- `RIIIndexItem`: Metadata from the judgement index
+- Content clas: 
+  - [Gesetze im Internet](https://www.gesetze-im-internet.de/) (Law books)
+  - [Rechtsprechung im Internet](https://www.rechtsprechung-im-internet.de/) (Court judgements
+  - `Titelzeile`: Title line
+  - `Leitsatz`: Headnote/summary
+  - `Tenor`: Operative part of the decision
+  - `Tatbestand`: Facts of the case
+  - `Gruende`: Legal reasoning
+  - `Entscheidungsgruende`: Decision grounds
+- `Region`: Regional jurisdiction information
+print(f"Case number: {judgement.aktenzeichen}")
+print(f"Decision type: {judgement.doktyp}")
+```
+
+#### Working with Judgement Content
+
+```python
+# Access structured content
+if judgement.titelzeile:
+    print(f"Title: {judgement.titelzeile.content}")
+
+if judgement.tenor:
+    print(f"Decision: {judgement.tenor.content}")
+
+if judgement.gruende:
+    print(f"Reasoning: {judgement.gruende.content}")
+
+# Access metadata
+print(f"Referenced norms: {judgement.norm}")
+print(f"Court body: {judgement.spruchkoerper}")
+```
+
+#### Browsing Available Judgements
+
+```python
+# Get index of all judgements
+index_items = downloader.get_all_judgement_index_items()
+print(f"Total available judgements: {len(index_items)}")
+
+# Browse index
+for item in index_items[:5]:
+    print(f"{item.aktenzeichen} - {item.gericht} - {item.entsch_datum}")
+
+# Get total count
+count = downloader.get_judgement_count()
+print(f"Available judgements: {count}")
+```
+
+#### Downloading Multiple Judgements
+
+```python
+# Download first n judgements
+judgements = downloader.download_first_n_judgements(10)
+print(f"Downloaded {len(judgements)} judgements")
+
+# WARNING: This downloads ALL judgements (may take very long)
+all_judgements = downloader.download_all_judgements()
 ```
 
 ## Features

@@ -1,22 +1,22 @@
 import os
 import sys
 from unittest.mock import patch, Mock
-from src.germanlegaltexts.GermanLegalTextDownloader import GermanLegalTextDownloader
-from src.germanlegaltexts.model.Gesetzbuch import Gesetzbuch
+from germanlegaltexts.GermanLawDownloader import GermanLawDownloader
+from germanlegaltexts.model.Gesetzbuch import Gesetzbuch
 
 # Add the parent directory to sys.path to allow importing from src
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 
-class TestGermanLegalTextDownloader:
+class TestGermanLawDownloader:
     def test_base_url(self):
         """Test the base URL of the downloader."""
-        downloader = GermanLegalTextDownloader()
+        downloader = GermanLawDownloader()
         assert downloader.base_url == "https://www.gesetze-im-internet.de"
 
     def test_download_law_url_formation(self):
         """Test that the download_law method forms the correct URL."""
-        downloader = GermanLegalTextDownloader()
+        downloader = GermanLawDownloader()
 
         original_get = downloader.__class__.__dict__['download_law_xml']
 
@@ -37,7 +37,7 @@ class TestGermanLegalTextDownloader:
 
     def test_download_law_book(self):
         """Test that the download_law_book method returns a Gesetzbuch object."""
-        downloader = GermanLegalTextDownloader()
+        downloader = GermanLawDownloader()
 
         test_xml = '''<?xml version="1.0" encoding="UTF-8"?>
         <dokumente builddate="2023-01-01" doknr="BJNR000000000">
@@ -69,8 +69,8 @@ class TestGermanLegalTextDownloader:
             assert result.norms[0].metadaten.amtabk == "TG"
 
     def test_get_all_xml_paths(self):
-        """Test that get_all_xml_paths_from_toc correctly extracts links from the TOC XML."""
-        downloader = GermanLegalTextDownloader()
+        """Test that get_all_xml_paths correctly extracts links from the TOC XML."""
+        downloader = GermanLawDownloader()
 
         # Sample XML content similar to the format described in the issue
         test_xml = '''<?xml version="1.0" encoding="UTF-8"?>
@@ -95,7 +95,7 @@ class TestGermanLegalTextDownloader:
         mock_response.text = test_xml
 
         with patch('requests.get', return_value=mock_response):
-            result = downloader.get_all_xml_paths_from_toc()
+            result = downloader.get_all_xml_paths()
 
             # Check that the method extracted the correct links
             assert len(result) == 3
