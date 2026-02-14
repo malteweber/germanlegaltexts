@@ -4,8 +4,11 @@ import xml.etree.ElementTree as ET
 import zipfile
 from pathlib import Path
 import requests
+import logging
 from .model.Rechtsprechung import Rechtsprechung, RIIIndexItem
 
+logger = logging.getLogger(__name__)
+logger.addHandler(logging.NullHandler())
 
 class GermanJudgementDownloader:
     """Downloader for German court judgements from rechtsprechung-im-internet.de"""
@@ -25,10 +28,12 @@ class GermanJudgementDownloader:
         Raises:
             ValueError: If the download fails or the ZIP doesn't contain exactly one XML file
         """
+        logger.debug(f"Downloading judgement XML from {url}")
         with tempfile.TemporaryDirectory() as tmpdir:
             try:
                 response = requests.get(url, stream=True)
                 if response.status_code != 200:
+                    logger.error(f"Download failed: HTTP {response.status_code} for {url}")
                     raise ValueError(f"Failed to download the file: {url} - HTTP {response.status_code}")
 
                 with zipfile.ZipFile(io.BytesIO(response.content)) as z:
@@ -36,11 +41,14 @@ class GermanJudgementDownloader:
 
                 xml_files = [*Path(tmpdir).glob('*.xml')]
                 if len(xml_files) != 1:
+                    logger.error(f"Expected 1 XML file, found {len(xml_files)} in {url}")
                     raise RuntimeError(f"Expected 1 XML file, found {len(xml_files)}")
                 else:
                     with open(Path(tmpdir) / xml_files[0], 'rb') as xml_file:
+                        logger.debug(f"Successfully extracted XML: {xml_files[0].name}")
                         return xml_file.read().decode('utf-8')
             except Exception as e:
+                logger.error(f"Error processing {url}: {str(e)}")
                 raise ValueError(f"An error occurred while processing {url}: {str(e)}")
 
     def download_judgement(self, url: str) -> Rechtsprechung:
@@ -71,10 +79,12 @@ class GermanJudgementDownloader:
             ValueError: If the TOC XML file cannot be downloaded or parsed
         """
         toc_url = f"{self.base_url}/rii-toc.xml"
+        logger.debug(f"Fetching judgement index from {toc_url}")
 
         try:
             response = requests.get(toc_url)
             if response.status_code != 200:
+                logger.error(f"Failed to download TOC: HTTP {response.status_code}")
                 raise ValueError(f"Failed to download the TOC XML file: {toc_url} - HTTP {response.status_code}")
 
             xml_content = response.text
@@ -100,11 +110,14 @@ class GermanJudgementDownloader:
                         modified=modified or ""
                     ))
 
+            logger.info(f"Retrieved {len(index_items)} judgement entries from index")
             return index_items
 
         except ET.ParseError as e:
+            logger.error(f"Failed to parse TOC XML: {str(e)}")
             raise ValueError(f"Failed to parse the TOC XML file: {str(e)}")
         except Exception as e:
+            logger.error(f"Error processing TOC: {str(e)}")
             raise ValueError(f"An error occurred while processing {toc_url}: {str(e)}")
 
     def download_all_judgements(self) -> list[Rechtsprechung]:
@@ -121,6 +134,7 @@ class GermanJudgementDownloader:
             ValueError: If any download fails
         """
         index_items = self.get_all_judgement_index_items()
+        logger.info(f"Starting download of {len(index_items)} judgements")
         judgements = []
 
         for i, item in enumerate(index_items, 1):
@@ -129,12 +143,13 @@ class GermanJudgementDownloader:
                 judgements.append(judgement)
                 
                 if i % 100 == 0:
-                    print(f"Downloaded {i}/{len(index_items)} judgements...")
+                    logger.info(f"Progress: {i}/{len(index_items)} judgements downloaded")
                     
             except Exception as e:
-                print(f"Warning: Failed to download judgement {item.aktenzeichen}: {str(e)}")
+                logger.warning(f"Failed to download judgement {item.aktenzeichen}: {str(e)}")
                 continue
 
+        logger.info(f"Completed: {len(judgements)}/{len(index_items)} judgements downloaded successfully")
         return judgements
 
     def download_first_n_judgements(self, n: int) -> list[Rechtsprechung]:
@@ -155,6 +170,7 @@ class GermanJudgementDownloader:
 
         index_items = self.get_all_judgement_index_items()
         items_to_download = index_items[:n]
+        logger.info(f"Starting download of first {len(items_to_download)} judgements")
         
         judgements = []
 
@@ -162,12 +178,13 @@ class GermanJudgementDownloader:
             try:
                 judgement = self.download_judgement(item.link)
                 judgements.append(judgement)
-                print(f"Downloaded {i}/{len(items_to_download)} judgements...")
+                logger.info(f"Progress: {i}/{len(items_to_download)} judgements downloaded")
                 
             except Exception as e:
-                print(f"Warning: Failed to download judgement {item.aktenzeichen}: {str(e)}")
+                logger.warning(f"Failed to download judgement {item.aktenzeichen}: {str(e)}")
                 continue
 
+        logger.info(f"Completed: {len(judgements)}/{len(items_to_download)} judgements downloaded successfully")
         return judgements
 
     def get_judgement_count(self) -> int:
@@ -180,4 +197,6 @@ class GermanJudgementDownloader:
         Raises:
             ValueError: If the index cannot be retrieved
         """
-        return len(self.get_all_judgement_index_items())
+        count = len(self.get_all_judgement_index_items())
+        logger.debug(f"Judgement count: {count}")
+        return count

@@ -1,12 +1,8 @@
-[build-system]
-requires = ["hatchling >= 1.26"]
-build-backend = "hatchling.build"
-
 [project]
 name = "germanlegaltexts"
-version = "0.0.1"
+version = "0.2.0"
 authors = [
-  { name="Malte Weber", email="" },
+  { name="Malte Weber", email="dev-weber@posteo.de" },
 ]
 description = "A package which implements functionality to download and parse german legal texts."
 readme = "README.md"
@@ -17,7 +13,3 @@ classifiers = [
 ]
 license = "MIT"
 license-files = ["LICEN[CS]E*"]
-
-[project.urls]
-#Homepage = "https://github.com/pypa/sampleproject"
-#Issues = "https://github.com/pypa/sampleproject/issues"
