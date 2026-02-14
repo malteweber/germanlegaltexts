@@ -120,7 +120,7 @@ class GermanLawDownloader:
             logger.error(f"Error processing TOC: {str(e)}")
             raise ValueError(f"An error occurred while processing the TOC XML file: {str(e)}")
 
-    def download_all_law_books(self) -> list:
+    def download_all_law_books(self) -> list[Gesetzbuch]:
         """
         Downloads all law books available from the German legal texts website.
 
