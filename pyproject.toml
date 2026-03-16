@@ -1,15 +1,22 @@
 [project]
 name = "germanlegaltexts"
-version = "0.2.1"
+version = "0.2.2"
 authors = [
   { name="Malte Weber", email="dev-weber@posteo.de" },
 ]
 description = "A package which implements functionality to download and parse german legal texts."
 readme = "README.md"
 requires-python = ">=3.12"
+license = "MIT"
+license-files = ["LICEN[CS]E*"]
+dependencies = [
+    "requests>=2.32.5",
+]
 classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent",
 ]
-license = "MIT"
-license-files = ["LICEN[CS]E*"]
+
+[project.urls]
+Homepage = "https://github.com/malteweber/germanlegaltexts"
+Repository = "https://github.com/malteweber/germanlegaltexts"
