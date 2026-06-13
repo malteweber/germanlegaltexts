@@ -99,6 +99,6 @@ class TestGermanLawDownloader:
 
             # Check that the method extracted the correct links
             assert len(result) == 3
-            assert result[0] == "http://www.gesetze-im-internet.de/1-dm-goldm_nzg/xml.zip"
-            assert result[1] == "http://www.gesetze-im-internet.de/besvng_1/xml.zip"
-            assert result[2] == "http://www.gesetze-im-internet.de/bimschv_1_2010/xml.zip"
+            assert result[0] == "https://www.gesetze-im-internet.de/1-dm-goldm_nzg/xml.zip"
+            assert result[1] == "https://www.gesetze-im-internet.de/besvng_1/xml.zip"
+            assert result[2] == "https://www.gesetze-im-internet.de/bimschv_1_2010/xml.zip"

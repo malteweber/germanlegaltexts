@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from .Normverweis import Normverweis
 
 
 @dataclass
@@ -199,3 +200,6 @@ class Rechtsprechung:
             publisher=root.findtext('publisher') or None,
             access_rights=root.findtext('accessRights') or None,
         )
+    
+    def get_structured_norms(self) -> list[Normverweis]:
+        return [Normverweis.from_string(norm_string) for norm_string in self.norm.split(",")]

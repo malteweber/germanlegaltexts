@@ -277,7 +277,8 @@ class GermanJudgementDownloader:
         """
         async with httpx.AsyncClient(timeout=httpx.Timeout(connect=10.0, read=60.0, write=10.0, pool=10.0)) as client:
             items = await self._get_all_judgement_index_items_async(client)
-            await self._iter_judgements(client, items, max_per_second)
+            async for judgement in self._iter_judgements(client, items, max_per_second):
+                yield judgement
 
     def iter_first_n_judgements(self, n: int, max_per_second: float | None = 1.0) -> AsyncGenerator[Rechtsprechung, None]:
         """
