@@ -7,7 +7,6 @@ from collections.abc import AsyncGenerator
 from pathlib import Path
 
 import httpx
-import requests
 import logging
 
 from .model.Rechtsprechung import Rechtsprechung, RIIIndexItem
@@ -37,7 +36,7 @@ class GermanJudgementDownloader:
         logger.debug(f"Downloading judgement XML from {url}")
         with tempfile.TemporaryDirectory() as tmpdir:
             try:
-                response = requests.get(url, stream=True)
+                response = httpx.get(url, follow_redirects=True)
                 if response.status_code != 200:
                     logger.error(f"Download failed: HTTP {response.status_code} for {url}")
                     raise ValueError(f"Failed to download the file: {url} - HTTP {response.status_code}")
@@ -88,7 +87,7 @@ class GermanJudgementDownloader:
         logger.debug(f"Fetching judgement index from {toc_url}")
 
         try:
-            response = requests.get(toc_url)
+            response = httpx.get(toc_url, follow_redirects=True)
             if response.status_code != 200:
                 logger.error(f"Failed to download TOC: HTTP {response.status_code}")
                 raise ValueError(f"Failed to download the TOC XML file: {toc_url} - HTTP {response.status_code}")

@@ -89,12 +89,12 @@ class TestGermanLawDownloader:
           </item>
         </items>'''
 
-        # Mock the requests.get method to return our test XML
+        # Mock the httpx.get method to return our test XML
         mock_response = Mock()
         mock_response.status_code = 200
         mock_response.text = test_xml
 
-        with patch('requests.get', return_value=mock_response):
+        with patch('httpx.get', return_value=mock_response):
             result = downloader.get_all_xml_paths()
 
             # Check that the method extracted the correct links
