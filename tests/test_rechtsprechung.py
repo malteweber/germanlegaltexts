@@ -65,3 +65,33 @@ def test_rechtsprechung_metadata(sample_judgement_xml):
     assert rechtsprechung.language == "deutsch"
     assert rechtsprechung.publisher == "BMJV"
     assert rechtsprechung.access_rights == "public"
+
+
+def _rechtsprechung_with_norm(norm):
+    return Rechtsprechung(
+        doknr="X", gertyp="BGH", spruchkoerper="1", entsch_datum="20240101",
+        aktenzeichen="I ZR 1/24", doktyp="Urteil", norm=norm,
+    )
+
+
+@pytest.mark.parametrize("norm", [None, "", "   "])
+def test_get_structured_norms_without_norm(norm):
+    """Test that a judgement without norms yields an empty list instead of crashing."""
+    assert _rechtsprechung_with_norm(norm).get_structured_norms() == []
+
+
+def test_get_structured_norms_splits_and_parses():
+    """Test that the norm string is split on commas and each part is parsed."""
+    norms = _rechtsprechung_with_norm("§ 433 BGB, Art 1 Abs 1 GG").get_structured_norms()
+
+    assert [(n.typ, n.einheit, n.qualifiers, n.gesetz) for n in norms] == [
+        ("§", "433", {}, "BGB"),
+        ("Art", "1", {"Abs": "1"}, "GG"),
+    ]
+
+
+def test_get_structured_norms_skips_empty_parts():
+    """Test that empty parts from stray or trailing commas are ignored."""
+    norms = _rechtsprechung_with_norm("§ 433 BGB, , § 212 StGB,").get_structured_norms()
+
+    assert [n.raw.strip() for n in norms] == ["§ 433 BGB", "§ 212 StGB"]

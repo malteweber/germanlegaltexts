@@ -202,4 +202,6 @@ class Rechtsprechung:
         )
     
     def get_structured_norms(self) -> list[Normverweis]:
-        return [Normverweis.from_string(norm_string) for norm_string in self.norm.split(",")]
+        if not self.norm:
+            return []
+        return [Normverweis.from_string(norm_string) for norm_string in self.norm.split(",") if norm_string.strip()]
