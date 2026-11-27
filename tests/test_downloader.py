@@ -1,5 +1,7 @@
+import io
 import os
 import sys
+import zipfile
 from unittest.mock import patch, Mock
 from germanlegaltexts.GermanLawDownloader import GermanLawDownloader
 from germanlegaltexts.model.Gesetzbuch import Gesetzbuch
@@ -14,26 +16,40 @@ class TestGermanLawDownloader:
         downloader = GermanLawDownloader()
         assert downloader.base_url == "https://www.gesetze-im-internet.de"
 
-    def test_download_law_url_formation(self):
-        """Test that the download_law method forms the correct URL."""
+    def test_get_law_book_url(self):
+        """Test that get_law_book_url builds the correct URL from an abbreviation."""
         downloader = GermanLawDownloader()
 
-        original_get = downloader.__class__.__dict__['download_law_xml']
+        assert downloader.get_law_book_url("ifsg") == "https://www.gesetze-im-internet.de/ifsg/xml.zip"
+        assert downloader.get_law_book_url("ABGB") == "https://www.gesetze-im-internet.de/abgb/xml.zip"
+        assert downloader.get_law_book_url(" bgb ") == "https://www.gesetze-im-internet.de/bgb/xml.zip"
 
-        try:
-            def test_download_law_xml(self, abbreviation):
-                url = f"{self.base_url}/{abbreviation.lower()}/xml.zip"
-                return url
+    def test_download_law_book_by_abbreviation(self):
+        """Test that download_law_book_by_abbreviation delegates with the built URL."""
+        downloader = GermanLawDownloader()
+        sentinel = Mock(spec=Gesetzbuch)
 
-            downloader.__class__.download_law_xml = test_download_law_xml
+        with patch.object(downloader, 'download_law_book', return_value=sentinel) as mock_download:
+            result = downloader.download_law_book_by_abbreviation("BGB")
 
-            url = downloader.download_law_xml("ifsg")
-            assert url == "https://www.gesetze-im-internet.de/ifsg/xml.zip"
+        mock_download.assert_called_once_with("https://www.gesetze-im-internet.de/bgb/xml.zip")
+        assert result is sentinel
 
-            url = downloader.download_law_xml("ABGB")
-            assert url == "https://www.gesetze-im-internet.de/abgb/xml.zip"
-        finally:
-            downloader.__class__.download_law_xml = original_get
+    def test_download_law_xml_requests_given_url(self):
+        """Test that download_law_xml fetches the given URL and extracts the single XML file."""
+        downloader = GermanLawDownloader()
+        url = "https://www.gesetze-im-internet.de/bgb/xml.zip"
+
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, 'w') as z:
+            z.writestr("BJNR001950896.xml", "<dokumente/>")
+        response = Mock(status_code=200, content=buf.getvalue())
+
+        with patch('germanlegaltexts.GermanLawDownloader.httpx.get', return_value=response) as mock_get:
+            xml = downloader.download_law_xml(url)
+
+        mock_get.assert_called_once_with(url, follow_redirects=True)
+        assert xml == "<dokumente/>"
 
     def test_download_law_book(self):
         """Test that the download_law_book method returns a Gesetzbuch object."""

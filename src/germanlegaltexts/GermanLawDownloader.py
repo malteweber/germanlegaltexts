@@ -18,32 +18,6 @@ logger.addHandler(logging.NullHandler())
 class GermanLawDownloader:
     base_url = 'https://www.gesetze-im-internet.de'
 
-    def download_law_xml(self, abbreviation: str) -> str:
-        url = f"{self.base_url}/{abbreviation.lower()}/xml.zip"
-        logger.debug(f"Downloading law XML for abbreviation '{abbreviation}' from {url}")
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            try:
-                response = httpx.get(url, follow_redirects=True)
-                if response.status_code != 200:
-                    logger.error(f"Download failed: HTTP {response.status_code} for {url}")
-                    raise ValueError(f"Failed to download the file: {url} - HTTP {response.status_code}")
-
-                with zipfile.ZipFile(io.BytesIO(response.content)) as z:
-                    z.extractall(tmpdir)
-
-                xml_files = [*Path(tmpdir).glob('*.xml')]
-                if len(xml_files) != 1:
-                    logger.error(f"Expected 1 XML file, found {len(xml_files)} for {abbreviation}")
-                    raise RuntimeError(f"Expected 1 XML file, found {len(xml_files)}")
-                else:
-                    with open(Path(tmpdir) / xml_files[0], 'rb') as xml_file:
-                        logger.debug(f"Successfully extracted XML: {xml_files[0].name}")
-                        return xml_file.read().decode('utf-8')
-            except Exception as e:
-                logger.error(f"Error processing {url}: {str(e)}")
-                raise ValueError(f"An error occurred while processing {url}: {str(e)}")
-
     def download_law_xml(self, url: str) -> str:
         logger.debug(f"Downloading law XML from {url}")
 
@@ -71,10 +45,11 @@ class GermanLawDownloader:
 
     def download_law_book(self, url: str) -> Gesetzbuch:
         """
-        Downloads the law book for a given abbreviation and returns it as a Gesetzbuch object.
+        Downloads the law book from a given XML zip URL and returns it as a Gesetzbuch object.
 
         Args:
-            abbreviation: The abbreviation of the law book to download
+            url: The URL of the law book's XML zip file,
+                 e.g. https://www.gesetze-im-internet.de/bgb/xml.zip
 
         Returns:
             A Gesetzbuch object representing the downloaded law book
@@ -84,6 +59,35 @@ class GermanLawDownloader:
         """
         xml_content = self.download_law_xml(url)
         return Gesetzbuch.from_xml(xml_content)
+
+    def get_law_book_url(self, abbreviation: str) -> str:
+        """
+        Builds the XML zip URL for a law book from its abbreviation.
+
+        Args:
+            abbreviation: The abbreviation of the law book as used on
+                          gesetze-im-internet.de (e.g. "bgb", "IfSG")
+
+        Returns:
+            The URL of the law book's XML zip file
+        """
+        return f"{self.base_url}/{abbreviation.strip().lower()}/xml.zip"
+
+    def download_law_book_by_abbreviation(self, abbreviation: str) -> Gesetzbuch:
+        """
+        Downloads the law book for a given abbreviation and returns it as a Gesetzbuch object.
+
+        Args:
+            abbreviation: The abbreviation of the law book as used on
+                          gesetze-im-internet.de (e.g. "bgb", "IfSG")
+
+        Returns:
+            A Gesetzbuch object representing the downloaded law book
+
+        Raises:
+            ValueError: If the download fails or the XML cannot be parsed
+        """
+        return self.download_law_book(self.get_law_book_url(abbreviation))
 
     def get_all_xml_paths(self) -> list:
         """
