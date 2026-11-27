@@ -39,6 +39,9 @@ downloader = GermanLawDownloader()
 # Download a single law book
 bgb = downloader.download_law_book("https://www.gesetze-im-internet.de/bgb/xml.zip")
 
+# ...or by its abbreviation
+bgb = downloader.download_law_book_by_abbreviation("bgb")
+
 paragraph = bgb.get_paragraph("§ 242")
 if paragraph:
     print(paragraph.metadaten.titel)
